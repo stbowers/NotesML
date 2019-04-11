@@ -1,14 +1,11 @@
 structure Application =
 struct
-    fun main (prog_name, args) =
-    let
-        val _ = print "Hello\n"
-        val _ = F_initscr.f ()
-        val _ = F_printw.f (ZString.dupML "Hello, World!")
-        val _ = F_refresh.f ()
-        val _ = F_getch.f ()
-        val _ = F_endwin.f ()
+    fun run(prog_name, args) = let
+        val _ = Curses.printw("Hello, World!")
+        val _ = Curses.getch()
     in
-      0
+        0
     end
+
+    fun main(prog_name, args) = (Curses.wrap run)(prog_name, args)
 end

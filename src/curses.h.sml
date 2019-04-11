@@ -1,3 +1,4 @@
+(* Loader for the curses library *)
 structure CursesH = struct
     local
         val lh = DynLinkage.open_lib {name = "libncursesw.so", global = true, lazy = true}

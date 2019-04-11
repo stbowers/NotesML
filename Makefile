@@ -13,13 +13,13 @@ IMAGE_ENTRY=Application.main
 NLFFI_DIR=$(SRC_DIR)/NLFFI-Generated
 NLFFI_HANDLE=CursesH.libh
 NLFFI_HINC=../curses.h.sml
-NLFFIGEN_ARGS=-dir $(NLFFI_DIR) -include $(NLFFI_HINC) -libhandle $(NLFFI_HANDLE)
+NLFFIGEN_ARGS=-include $(NLFFI_HINC) -libhandle $(NLFFI_HANDLE)
 
 $(IMAGE): $(OUT_DIR) $(SOURCES) $(NLFFI_DIR)
 	ml-build $(CM_FILE) $(IMAGE_ENTRY) $(IMAGE)
 
 $(NLFFI_DIR): $(FFI_HEADERS)
-	ml-nlffigen $(NLFFIGEN_ARGS) $(FFI_HEADERS)
+	ml-nlffigen -dir $(NLFFI_DIR) $(NLFFIGEN_ARGS) $(FFI_HEADERS)
 
 run: $(IMAGE)
 	sml @SMLload $(IMAGE).x86-linux
