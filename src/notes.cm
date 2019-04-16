@@ -5,4 +5,5 @@ Group is
     NLFFI-Generated/nlffi-generated.cm
 
     curses.sml
+    window.sml
     notes.sml

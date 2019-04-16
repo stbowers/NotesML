@@ -1,18 +1,13 @@
 (* Lightweight wrapper arround the native curses functions *)
 structure Curses = struct
-    (* ===== Constants ===== *)
-    val ERR = ~1
+    (* ===== Types ===== *)
+    type WINDOW = C.voidptr
 
-    (* ===== Variables ===== *)
-    val stdscr = C.Ptr.vNull
+    (* ===== Constants ===== *)
+    val ERR = MLRep.Signed.fromInt ~1
 
     (* ===== Control functions ===== *)
-    fun initscr() = 
-    let
-        val stdscr = F_initscr.f()
-    in
-        stdscr
-    end
+    fun initscr() : WINDOW = F_initscr.f()
 
     fun endwin() = F_endwin.f()
     fun refresh() = F_refresh.f()
@@ -21,16 +16,33 @@ structure Curses = struct
     fun nocbreak() = F_nocbreak.f()
     fun echo() = F_echo.f()
     fun noecho() = F_noecho.f()
+    (* int halfdelay(int tenths); *)
+    (* int intrflush(WINDOW *win, bool bf); *)
     fun keypad(window, bf: bool) =
     let
         val boolval = Word32.fromInt (if bf then 1 else 0)
     in
         F_keypad.f(window, boolval)
     end
+    (* int meta(WINDOW *win, bool bf); *)
+    fun nodelay(window, bf: bool) = let
+        val boolval = Word32.fromInt (if bf then 1 else 0)
+    in
+        F_nodelay.f(window, boolval)
+    end
+    (* int raw(); *)
+    (* int noraw(); *)
+    (* void noqiflush(); *)
+    (* void qiflush(); *)
+    (* int notimeout(WINDOW *win, bool bf); *)
+    (* void timeout(int delay); *)
+    (* void wtimeout(WINDOW *win, int delay); *)
+    (* int typeahead(int fd); *)
 
     fun curs_set(visibility) = F_curs_set.f(visibility)
 
     (* ===== Output functions ===== *)
+    fun addch(out: char) = F_addch.f(MLRep.Signed.fromInt (Char.ord out))
     fun printw(out: string) = F_printw.f(ZString.dupML out)
 
     (* ===== Input functions ===== *)
@@ -42,16 +54,14 @@ structure Curses = struct
      * the wrapped function, the terminal will be returned to a sane state before 
      * propagating the exception
      *)
-    fun wrap func =
-    let
-        val _ = initscr()
+    fun wrap(func: WINDOW * 'a -> 'b): 'a -> 'b = let
+        val stdscr = initscr()
         val _ = cbreak()
         val _ = noecho()
         val _ = keypad(stdscr, true)
     in
-        fn args: 'a =>
-        let
-            val ret = func args
+        fn (args: 'a) => let
+            val ret = func(stdscr, args)
             val _ = keypad(stdscr, false)
             val _ = echo()
             val _ = nocbreak()

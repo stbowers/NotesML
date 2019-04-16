@@ -15,6 +15,7 @@ NLFFI_HANDLE=CursesH.libh
 NLFFI_HINC=../curses.h.sml
 NLFFIGEN_ARGS=-include $(NLFFI_HINC) -libhandle $(NLFFI_HANDLE)
 
+smlnj-image: $(IMAGE)
 $(IMAGE): $(OUT_DIR) $(SOURCES) $(NLFFI_DIR)
 	ml-build $(CM_FILE) $(IMAGE_ENTRY) $(IMAGE)
 
