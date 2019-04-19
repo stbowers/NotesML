@@ -14,6 +14,10 @@ structure Curses = struct
     val COLOR_CYAN = MLRep.Signed.fromInt 6
     val COLOR_WHITE = MLRep.Signed.fromInt 7
 
+    (* ===== External variables ===== *)
+    fun COLS() = MLRep.Signed.toInt(C.Get.sint(G_COLS.obj()))
+    fun LINES() = MLRep.Signed.toInt(C.Get.sint(G_LINES.obj()))
+
     (* ===== Helper functions ===== *)
     fun bool_to_int(b: bool) = Word32.fromInt(if b then 1 else 0)
     fun int_to_bool(i: Word32.word) = not (Word32.toInt i = 0)
@@ -71,6 +75,16 @@ structure Curses = struct
     in
         F_init_color.f(c_color, c_r, c_g, c_b)
     end
+
+    fun getattrs(win) = MLRep.Signed.toInt(F_getattrs.f(win))
+    fun getbegx(win) = MLRep.Signed.toInt(F_getbegx.f(win))
+    fun getbegy(win) = MLRep.Signed.toInt(F_getbegx.f(win))
+    fun getcurx(win) = MLRep.Signed.toInt(F_getbegx.f(win))
+    fun getcury(win) = MLRep.Signed.toInt(F_getbegx.f(win))
+    fun getmaxx(win) = MLRep.Signed.toInt(F_getbegx.f(win))
+    fun getmaxy(win) = MLRep.Signed.toInt(F_getbegx.f(win))
+    fun getparx(win) = MLRep.Signed.toInt(F_getbegx.f(win))
+    fun getpary(win) = MLRep.Signed.toInt(F_getbegx.f(win))
 
     (* ===== Output functions ===== *)
     fun addch(out: char) = F_addch.f(MLRep.Signed.fromInt (Char.ord out))

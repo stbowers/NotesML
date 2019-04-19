@@ -1,15 +1,15 @@
 signature APPDATA = sig
-    type data_type
+    type t_data
 
-    val default: data_type
-    val handle_events: data_type ref * Event.event list -> Event.event list
+    val default: t_data
+    val handle_events: t_data ref * Event.event list -> Event.event list
 
-    val get_i: data_type -> int
-    val set_i: data_type ref -> unit
+    val get_i: t_data -> int
+    val set_i: t_data ref -> unit
 end
 
 structure AppData :> APPDATA = struct
-    type data_type = {
+    type t_data = {
         notes: string list,
         i: int
     }
@@ -33,8 +33,8 @@ structure AppData :> APPDATA = struct
         handle_recursive(data, events, [])
     end
 
-    fun get_i(data: data_type) = #i data
-    fun set_i(data: data_type ref) = let
+    fun get_i(data: t_data) = #i data
+    fun set_i(data: t_data ref) = let
         val {notes, i} = !data
     in
         data := {i = i+1, notes = notes}

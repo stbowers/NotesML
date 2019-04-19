@@ -5,6 +5,9 @@
  * simpler version only describing the end-user interface to the dynamic library needed by the program.
  */
 
+extern int COLS;
+extern int LINES;
+
 typedef char bool;
 typedef void WINDOW; // WINDOW is always used as a pointer, so a void pointer works here
 typedef short chtype;
@@ -41,6 +44,16 @@ bool has_colors();
 bool can_change_color();
 int init_pair(short pair, short f, short b);
 int init_color(short color, short r, short g, short b);
+
+int getattrs(WINDOW *win);
+int getbegx(WINDOW *win);
+int getbegy(WINDOW *win);
+int getcurx(WINDOW *win);
+int getcury(WINDOW *win);
+int getmaxx(WINDOW *win);
+int getmaxy(WINDOW *win);
+int getparx(WINDOW *win);
+int getpary(WINDOW *win);
 
 /* Output functions (NLFFI Does not support variadic arguments, so only format string is used)
  */

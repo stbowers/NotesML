@@ -8,9 +8,10 @@ struct
 
     fun run(stdscr, (prog_name, args)) = let
         val app_data = ref AppData.default
+        val window = ref (Window.fromScr(stdscr))
         fun run_recursive(app_data, event_queue) = let
-            val _ = Window.render(app_data)
-            val polled_events = Window.poll_events(stdscr, true)
+            val _ = Window.render(window, app_data)
+            val polled_events = Window.poll_events(window, true)
             val produced_events = AppData.handle_events(app_data, event_queue @ polled_events)
         in
             if List.exists (fn(x) => Event.isQuit x) (produced_events) then 0
