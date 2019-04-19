@@ -12,6 +12,10 @@ structure Window :> WINDOW = struct
         win: Curses.WINDOW,
         width: int,
         height: int,
+        colors: {
+            default: int,
+            inverted: int
+        }
     }
 
     (* Create a window from a raw curses window
@@ -21,11 +25,17 @@ structure Window :> WINDOW = struct
         val height = Curses.LINES()
         val _ = Curses.clear()
         val _ = Curses.curs_set(0)
+        val _ = Curses.init_pair(1, Curses.COLOR_WHITE, Curses.COLOR_BLACK)
+        val _ = Curses.init_pair(2, Curses.COLOR_BLACK, Curses.COLOR_WHITE)
     in
         {
             win = curses_win,
             width = width,
-            height = height
+            height = height,
+            colors = {
+                default = 1,
+                inverted = 2
+            }
         }
     end
 

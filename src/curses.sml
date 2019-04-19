@@ -5,14 +5,14 @@ structure Curses = struct
 
     (* ===== Constants ===== *)
     val ERR = MLRep.Signed.fromInt ~1
-    val COLOR_BLACK = MLRep.Signed.fromInt 0
-    val COLOR_RED = MLRep.Signed.fromInt 1
-    val COLOR_GREEN = MLRep.Signed.fromInt 2
-    val COLOR_YELLOW = MLRep.Signed.fromInt 3
-    val COLOR_BLUE = MLRep.Signed.fromInt 4
-    val COLOR_MAGENTA = MLRep.Signed.fromInt 5
-    val COLOR_CYAN = MLRep.Signed.fromInt 6
-    val COLOR_WHITE = MLRep.Signed.fromInt 7
+    val COLOR_BLACK = 0
+    val COLOR_RED = 1
+    val COLOR_GREEN = 2
+    val COLOR_YELLOW = 3
+    val COLOR_BLUE = 4
+    val COLOR_MAGENTA = 5
+    val COLOR_CYAN = 6
+    val COLOR_WHITE = 7
 
     (* ===== External variables ===== *)
     fun COLS() = MLRep.Signed.toInt(C.Get.sint(G_COLS.obj()))
