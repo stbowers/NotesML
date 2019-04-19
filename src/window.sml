@@ -14,20 +14,21 @@ structure Window = struct
             val _ = Curses.nodelay(win, true)
         in
             if event = Curses.ERR then nil
-            else get_events([Event.fromChar (event)])
+            else get_events([Event.Input (event)])
         end
             |get_events(events) = let
             val event = Curses.getch()
         in
             if event = Curses.ERR then events
-            else get_events(events @ [Event.fromChar (event)])
+            else get_events(events @ [Event.Input (event)])
         end
     in
         get_events(nil)
     end
 
     fun render(app_data: AppData.data_type ref) = let
-        val _ = Curses.mvprintw(0, 0, "Hello, World!")
+        val _ = Curses.mvprintw(0, 0, "Hello, World! i = " ^ Int.toString(AppData.get_i(!app_data)))
+        val _ = AppData.set_i(app_data)
         val _ = Curses.refresh()
     in
         0

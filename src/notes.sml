@@ -8,26 +8,16 @@ struct
 
     fun run(stdscr, (prog_name, args)) = let
         val app_data = ref AppData.default
-        val run = ref true
-        val events = ref []
-        val return_code = ref 0
+        fun run_recursive(app_data, event_queue) = let
+            val _ = Window.render(app_data)
+            val polled_events = Window.poll_events(stdscr, true)
+            val produced_events = AppData.handle_events(app_data, event_queue @ polled_events)
+        in
+            if List.exists (fn(x) => Event.isQuit x) (produced_events) then 0
+            else run_recursive(app_data, produced_events)
+        end
     in
-        while !run do
-        (
-            (* First render the application, so the user has the most up-to-date view before sending input to the program *)
-            Window.render(app_data);
-
-            (* Poll the window for new events, adding them to the list of events produced in the last iteration *)
-            events := !events @ Window.poll_events(stdscr, true);
-
-            (* Process the events *)
-            events := AppData.handle_events(app_data, !events);
-
-            (* *)
-            if List.exists (fn(x) => Event.isQuit x) (!events) then (run := false) else ()
-        );
-
-        !return_code
+        run_recursive(app_data, [])
     end
 
     fun main(prog_name, args) = (Curses.wrap run)(prog_name, args)
