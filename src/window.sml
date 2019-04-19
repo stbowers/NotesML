@@ -11,7 +11,7 @@ structure Window :> WINDOW = struct
     type t_window = {
         win: Curses.WINDOW,
         width: int,
-        height: int
+        height: int,
     }
 
     (* Create a window from a raw curses window
@@ -19,6 +19,8 @@ structure Window :> WINDOW = struct
     fun fromScr(curses_win) = let
         val width = Curses.COLS()
         val height = Curses.LINES()
+        val _ = Curses.clear()
+        val _ = Curses.curs_set(0)
     in
         {
             win = curses_win,

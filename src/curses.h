@@ -55,6 +55,15 @@ int getmaxy(WINDOW *win);
 int getparx(WINDOW *win);
 int getpary(WINDOW *win);
 
+int erase();
+int werase(WINDOW *win);
+int clear();
+int wclear(WINDOW* win);
+int clrtobot();
+int wclrtobot(WINDOW *win);
+int clrtoeol();
+int wclrtoeol(WINDOW *win);
+
 /* Output functions (NLFFI Does not support variadic arguments, so only format string is used)
  */
 int addch(const chtype ch);

@@ -86,6 +86,15 @@ structure Curses = struct
     fun getparx(win) = MLRep.Signed.toInt(F_getbegx.f(win))
     fun getpary(win) = MLRep.Signed.toInt(F_getbegx.f(win))
 
+    fun erase() = F_erase.f()
+    fun werase(win) = F_werase.f(win)
+    fun clear() = F_clear.f()
+    fun wclear(win) = F_wclear.f(win)
+    fun clrtobot() = F_clrtobot.f()
+    fun wclrtobot(win) = F_wclrtobot.f(win)
+    fun clrtoeol() = F_clrtoeol.f()
+    fun wclrtoeol(win) = F_wclrtoeol.f(win)
+
     (* ===== Output functions ===== *)
     fun addch(out: char) = F_addch.f(MLRep.Signed.fromInt (Char.ord out))
     fun printw(out: string) = F_printw.f(ZString.dupML out)
