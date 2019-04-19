@@ -44,6 +44,7 @@ structure Curses = struct
     (* ===== Output functions ===== *)
     fun addch(out: char) = F_addch.f(MLRep.Signed.fromInt (Char.ord out))
     fun printw(out: string) = F_printw.f(ZString.dupML out)
+    fun mvprintw(y: int, x: int, out: string) = F_mvprintw.f(MLRep.Signed.fromInt y, MLRep.Signed.fromInt x, ZString.dupML out)
 
     (* ===== Input functions ===== *)
     fun getch() = F_getch.f()

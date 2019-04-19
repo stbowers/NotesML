@@ -5,5 +5,7 @@ Group is
     NLFFI-Generated/nlffi-generated.cm
 
     curses.sml
+    event.sml
+    app_data.sml
     window.sml
     notes.sml
