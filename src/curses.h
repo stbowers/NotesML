@@ -36,6 +36,12 @@ int typeahead(int fd);
 
 int curs_set(int visibility);
 
+int start_color();
+bool has_colors();
+bool can_change_color();
+int init_pair(short pair, short f, short b);
+int init_color(short color, short r, short g, short b);
+
 /* Output functions (NLFFI Does not support variadic arguments, so only format string is used)
  */
 int addch(const chtype ch);
