@@ -97,8 +97,15 @@ structure Curses = struct
 
     (* ===== Output functions ===== *)
     fun addch(out: char) = F_addch.f(MLRep.Signed.fromInt (Char.ord out))
-    fun printw(out: string) = F_printw.f(ZString.dupML out)
-    fun mvprintw(y: int, x: int, out: string) = F_mvprintw.f(MLRep.Signed.fromInt y, MLRep.Signed.fromInt x, ZString.dupML out)
+
+    fun addstr(str: string) = F_addstr.f(ZString.dupML str)
+    fun addnstr(str: string, n: int) = F_addnstr.f(ZString.dupML str, MLRep.Signed.fromInt n)
+    fun waddstr(win, str: string) = F_waddstr.f(win, ZString.dupML str)
+    fun waddnstr(win, str: string, n: int) = F_waddnstr.f(win, ZString.dupML str, MLRep.Signed.fromInt n)
+    fun mvaddstr(y: int, x: int, str: string) = F_mvaddstr.f(MLRep.Signed.fromInt y, MLRep.Signed.fromInt x, ZString.dupML str)
+    fun mvaddnstr(y: int, x: int, str: string, n: int) = F_mvaddnstr.f(MLRep.Signed.fromInt y, MLRep.Signed.fromInt x, ZString.dupML str, MLRep.Signed.fromInt n)
+    fun mvwaddstr(win, y: int, x: int, str: string) = F_mvwaddstr.f(win, MLRep.Signed.fromInt y, MLRep.Signed.fromInt x, ZString.dupML str)
+    fun mvwaddnstr(win, y: int, x: int, str: string, n: int) = F_mvwaddnstr.f(win, MLRep.Signed.fromInt y, MLRep.Signed.fromInt x, ZString.dupML str, MLRep.Signed.fromInt n)
 
     (* ===== Input functions ===== *)
     fun getch() = F_getch.f()

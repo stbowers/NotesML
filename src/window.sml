@@ -64,10 +64,15 @@ structure Window :> WINDOW = struct
         get_events(nil)
     end
 
+    fun print_header(win: t_window ref, msg: string) = let
+        val padding = (#width (!win)) - ((String.size msg) - 6)
+        val line = StringCvt.padRight #"=" padding ("===|" ^ msg)
+    in
+        Curses.mvaddstr(0, 0, line)
+    end
+
     fun render(win: t_window ref, app_data: AppData.t_data ref) = let
-        val _ = Curses.mvprintw(0, 0, "Hello, World! i = " ^ Int.toString(AppData.get_i(!app_data)))
-        val _ = Curses.mvprintw(1, 0, "Win: " ^ Int.toString(#width (!win)) ^ "x" ^ Int.toString(#height (!win)) )
-        val _ = AppData.set_i(app_data)
+        val _ = print_header(win, "Hello!")
         val _ = Curses.refresh()
     in
         ()

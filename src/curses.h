@@ -68,10 +68,14 @@ int wclrtoeol(WINDOW *win);
  */
 int addch(const chtype ch);
 
-int printw(const char *fmt);
-int wprintw(WINDOW *win, const char *fmt);
-int mvprintw(int y, int x, const char *fmt);
-int mvwprintw(WINDOW *win, int y, int x, const char *fmt);
+int addstr(const char *str);
+int addnstr(const char *str, int n);
+int waddstr(WINDOW *win, const char *str);
+int waddnstr(WINDOW *win, const char *str, int n);
+int mvaddstr(int y, int x, const char *str);
+int mvaddnstr(int y, int x, const char *str, int n);
+int mvwaddstr(WINDOW *win, int y, int x, const char *str);
+int mvwaddnstr(WINDOW *win, int y, int x, const char *str, int n);
 
 /* Input functions
  */
