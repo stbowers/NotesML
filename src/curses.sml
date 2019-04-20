@@ -13,6 +13,7 @@ structure Curses = struct
     val COLOR_MAGENTA = 5
     val COLOR_CYAN = 6
     val COLOR_WHITE = 7
+
     val A_STANDOUT = 65536
     val A_UNDERLINE = 131072
     val A_REVERSE = 0
@@ -28,6 +29,8 @@ structure Curses = struct
     val A_RIGHT = 0
     val A_TOP = 0
     val A_VERTICAL = 0
+
+    val KEY_STAB = MLRep.Signed.fromInt 0524
 
     (* ===== External variables ===== *)
     fun COLS() = MLRep.Signed.toInt(C.Get.sint(G_COLS.obj()))

@@ -19,6 +19,7 @@ structure Window :> WINDOW = struct
 
     val COLOR_DEFAULT = 1
     val COLOR_INVERTED = 2
+    val COLOR_CONTENT = 3
 
     (* Create a window from a raw curses window
      *)
@@ -32,6 +33,7 @@ structure Window :> WINDOW = struct
         val _ = Curses.curs_set(0)
         val _ = Curses.init_pair(COLOR_DEFAULT, Curses.COLOR_WHITE, Curses.COLOR_BLACK)
         val _ = Curses.init_pair(COLOR_INVERTED, Curses.COLOR_BLACK, Curses.COLOR_WHITE)
+        val _ = Curses.init_pair(COLOR_CONTENT, Curses.COLOR_CYAN, Curses.COLOR_BLACK)
     in
         {
             win = curses_win,
@@ -99,7 +101,7 @@ structure Window :> WINDOW = struct
     end
 
     fun render(win: t_window ref, app_data: AppData.t_data ref) = let
-        val debug_info = "f = " ^ Int.toString (!(#frame (!win)))
+        val debug_info = "f=" ^ Int.toString (!(#frame (!win))) ^ ",m=" ^ Int.toString(AppData.get_mode app_data)
         fun print_notes(win: t_window ref, [], index, selected_index) = ()
             |print_notes(win: t_window ref, nh::nt, index, selected_index) = let
                 val color = if index = selected_index then COLOR_INVERTED else COLOR_DEFAULT
@@ -120,7 +122,7 @@ structure Window :> WINDOW = struct
         val content_begin_y = 1
         val content_width = !(#content_width (!win))
         val content_height = !(#height (!win)) - 1
-        val content_attrs = Curses.combine_attrs([Curses.COLOR_PAIR(1), Curses.A_BOLD])
+        val content_attrs = Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_CONTENT), Curses.A_BOLD])
     in
         (#frame (!win)) := !(#frame (!win)) + 1;
         Curses.erase();
