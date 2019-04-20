@@ -13,6 +13,21 @@ structure Curses = struct
     val COLOR_MAGENTA = 5
     val COLOR_CYAN = 6
     val COLOR_WHITE = 7
+    val A_STANDOUT = 65536
+    val A_UNDERLINE = 131072
+    val A_REVERSE = 0
+    val A_BLINK = 0
+    val A_DIM = 1048576
+    val A_BOLD = 2097152
+    val A_ALTCHARSET = 0
+    val A_INVIS = 0
+    val A_PROTECT = 0
+    val A_HORIZONTAL = 0
+    val A_LEFT = 0
+    val A_LOW = 0
+    val A_RIGHT = 0
+    val A_TOP = 0
+    val A_VERTICAL = 0
 
     (* ===== External variables ===== *)
     fun COLS() = MLRep.Signed.toInt(C.Get.sint(G_COLS.obj()))
@@ -137,19 +152,25 @@ structure Curses = struct
     fun attr_on(attrs, opts) = F_attr_on.f(attrs, opts)
     fun wattr_on(win, attrs, opts) = F_wattr_on.f(win, attrs, opts)
 
-    fun attroff(attrs) = F_attroff.f(attrs)
+    fun attroff(attrs: int) = F_attroff.f(MLRep.Signed.fromInt attrs)
     fun wattroff(win, attrs) = F_wattroff.f(win, attrs)
-    fun attron(attrs) = F_attron.f(attrs)
+    fun attron(attrs: int) = F_attron.f(MLRep.Signed.fromInt attrs)
     fun wattron(win, attrs) = F_wattron.f(win, attrs)
     fun attrset(attrs) = F_attrset.f(attrs)
     fun wattrset(win, attrs) = F_wattrset.f(win, attrs)
 
-    fun COLOR_PAIR(pair: int) = F_COLOR_PAIR.f(MLRep.Signed.fromInt pair)
+    fun COLOR_PAIR(pair: int) = MLRep.Signed.toInt(F_COLOR_PAIR.f(MLRep.Signed.fromInt pair))
 
     (* ===== Input functions ===== *)
     fun getch() = F_getch.f()
 
     (* ===== Helper functions ===== *)
+    fun combine_attrs(attrs: int list) = let
+        fun or_attr_list(combined: IntInf.int, []: int list) = combined
+            |or_attr_list(combined, ah::at) = or_attr_list(IntInf.orb(combined, IntInf.fromInt ah), at)
+    in
+        IntInf.toInt(or_attr_list(0, attrs))
+    end
     (* Wraps the supplied function so that curses is set up before calling the function
      * and is cleaned up before returning. If an uncaught exception occurs while executing 
      * the wrapped function, the terminal will be returned to a sane state before 

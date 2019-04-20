@@ -77,7 +77,7 @@ structure Window :> WINDOW = struct
     end
 
     (* Prints the given string inside of the specified box *)
-    fun print_content(win: t_window ref, content: string, begin_x: int, begin_y: int, width: int, height: int) = let
+    fun print_content(win: t_window ref, content: string, begin_x: int, begin_y: int, width: int, height: int, attrs: int) = let
         fun print_content_chars([], x, y) = ()
             |print_content_chars(ch::ct, x, y) = let
                 val (x, y) = if x >= (begin_x + width) then (begin_x, y + 1)
@@ -88,9 +88,9 @@ structure Window :> WINDOW = struct
                     print_content_chars(ct, begin_x, y + 1)
                 )
                 else (
-                    Curses.attron(Curses.COLOR_PAIR(COLOR_DEFAULT));
+                    Curses.attron(attrs);
                     Curses.mvaddch(y, x, ch);
-                    Curses.attroff(Curses.COLOR_PAIR(COLOR_DEFAULT));
+                    Curses.attroff(attrs);
                     print_content_chars(ct, x + 1, y)
                 )
             end
@@ -120,13 +120,14 @@ structure Window :> WINDOW = struct
         val content_begin_y = 1
         val content_width = !(#content_width (!win))
         val content_height = !(#height (!win)) - 1
+        val content_attrs = Curses.combine_attrs([Curses.COLOR_PAIR(1), Curses.A_BOLD])
     in
         (#frame (!win)) := !(#frame (!win)) + 1;
         Curses.erase();
         print_header(win, "NotesML " ^ AppData.get_version app_data ^ " {" ^ debug_info ^ "}");
         print_notes(win, AppData.get_notes app_data, 0, AppData.get_selected app_data);
         print_split(win, 1);
-        print_content(win, AppData.get_note_content(app_data, AppData.get_selected app_data), content_begin_x, content_begin_y, content_width, content_height);
+        print_content(win, AppData.get_note_content(app_data, AppData.get_selected app_data), content_begin_x, content_begin_y, content_width, content_height, content_attrs);
         Curses.refresh();
         ()
     end
