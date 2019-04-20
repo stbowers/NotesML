@@ -11,7 +11,8 @@ structure Window :> WINDOW = struct
     type t_window = {
         win: Curses.WINDOW,
         width: int,
-        height: int
+        height: int,
+        frame: int ref
     }
 
     val COLOR_DEFAULT = 1
@@ -30,7 +31,8 @@ structure Window :> WINDOW = struct
         {
             win = curses_win,
             width = width,
-            height = height
+            height = height,
+            frame = ref 0
         }
     end
 
@@ -60,8 +62,7 @@ structure Window :> WINDOW = struct
     end
 
     fun print_header(win: t_window ref, msg: string) = let
-        val padding = (#width (!win)) - ((String.size msg) - 6)
-        val line = StringCvt.padRight #"=" padding ("===|" ^ msg ^ "|")
+        val line = StringCvt.padRight #"=" (#width (!win)) ("===|" ^ msg ^ "|")
     in
         Curses.attron(Curses.COLOR_PAIR(COLOR_DEFAULT));
         Curses.mvaddstr(0, 0, line);
@@ -69,9 +70,21 @@ structure Window :> WINDOW = struct
     end
 
     fun render(win: t_window ref, app_data: AppData.t_data ref) = let
+        val debug_info = "f = " ^ Int.toString (!(#frame (!win)))
+        fun print_notes(win, [], index, selected_index) = ()
+            |print_notes(win, nh::nt, index, selected_index) = let
+                val color = if index = selected_index then COLOR_INVERTED else COLOR_DEFAULT
+            in
+                Curses.attron(Curses.COLOR_PAIR(color));
+                Curses.mvaddstr(1 + index, 0, nh);
+                Curses.attroff(Curses.COLOR_PAIR(color));
+                print_notes(win, nt, index + 1, selected_index)
+            end
     in
+        (#frame (!win)) := !(#frame (!win)) + 1;
         Curses.erase();
-        print_header(win, "Hello!");
+        print_header(win, "NotesML " ^ AppData.get_version app_data ^ " {" ^ debug_info ^ "}");
+        print_notes(win, AppData.get_notes app_data, 0, AppData.get_selected app_data);
         Curses.refresh();
         ()
     end

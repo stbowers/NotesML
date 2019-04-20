@@ -1,17 +1,13 @@
 structure Application =
 struct
-    fun has_ch([], ch) = false
-        |has_ch((Event.Input xh)::xt, ch) =
-            if xh = (MLRep.Signed.fromInt (Char.ord ch)) then true
-            else has_ch(xt, ch)
-        |has_ch(xh::xt, ch) = has_ch(xt, ch)
+    val ONLY_UPDATE_ON_USER_INPUT = true
 
     fun run(stdscr, (prog_name, args)) = let
         val app_data = ref AppData.default
         val window = ref (Window.fromScr(stdscr))
         fun run_recursive(app_data, event_queue) = let
             val _ = Window.render(window, app_data)
-            val polled_events = Window.poll_events(window, true)
+            val polled_events = Window.poll_events(window, ONLY_UPDATE_ON_USER_INPUT)
             val produced_events = AppData.handle_events(app_data, event_queue @ polled_events)
         in
             if List.exists (fn(x) => Event.isQuit x) (produced_events) then 0
