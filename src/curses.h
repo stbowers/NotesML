@@ -11,6 +11,7 @@ extern int LINES;
 typedef char bool;
 typedef void WINDOW; // WINDOW is always used as a pointer, so a void pointer works here
 typedef short chtype;
+typedef chtype attr_t;
 
 /* Control functions
  */
@@ -42,8 +43,11 @@ int curs_set(int visibility);
 int start_color();
 bool has_colors();
 bool can_change_color();
-int init_pair(short pair, short f, short b);
-int init_color(short color, short r, short g, short b);
+int init_pair(int pair, int f, int b);
+int init_color(int color, int r, int g, int b);
+
+int use_default_colors();
+int assume_default_colors(int fg, int bg);
 
 int getattrs(WINDOW *win);
 int getbegx(WINDOW *win);
@@ -63,6 +67,41 @@ int clrtobot();
 int wclrtobot(WINDOW *win);
 int clrtoeol();
 int wclrtoeol(WINDOW *win);
+
+int attr_get(attr_t *attrs, short *pair, void *opts);
+int wattr_get(WINDOW *win, attr_t *attrs, short *pair, void *opts);
+int attr_set(attr_t attrs, short pair, void *opts);
+int wattr_set(WINDOW *win, attr_t attrs, short pair, void *opts);
+
+int attr_off(attr_t attrs, void *opts);
+int wattr_off(WINDOW *win, attr_t attrs, void *opts);
+int attr_on(attr_t attrs, void *opts);
+int wattr_on(WINDOW *win, attr_t attrs, void *opts);
+
+int attroff(int attrs);
+int wattroff(WINDOW *win, int attrs);
+int attron(int attrs);
+int wattron(WINDOW *win, int attrs);
+int attrset(int attrs);
+int wattrset(WINDOW *win, int attrs);
+
+int chgat(int n, attr_t attr, short pair, const void *opts);
+int wchgat(WINDOW *win,
+int n, attr_t attr, short pair, const void *opts);
+int mvchgat(int y, int x,
+int n, attr_t attr, short pair, const void *opts);
+int mvwchgat(WINDOW *win, int y, int x,
+int n, attr_t attr, short pair, const void *opts);
+
+int color_set(short pair, void* opts);
+int wcolor_set(WINDOW *win, short pair, void* opts);
+
+int standend(void);
+int wstandend(WINDOW *win);
+int standout(void);
+int wstandout(WINDOW *win);
+
+int COLOR_PAIR(int);
 
 /* Output functions (NLFFI Does not support variadic arguments, so only format string is used)
  */

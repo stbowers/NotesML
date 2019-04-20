@@ -76,6 +76,9 @@ structure Curses = struct
         F_init_color.f(c_color, c_r, c_g, c_b)
     end
 
+    fun use_default_colors() = F_use_default_colors.f()
+    fun assume_default_colors(fg, bg) = F_assume_default_colors.f(fg, bg)
+
     fun getattrs(win) = MLRep.Signed.toInt(F_getattrs.f(win))
     fun getbegx(win) = MLRep.Signed.toInt(F_getbegx.f(win))
     fun getbegy(win) = MLRep.Signed.toInt(F_getbegx.f(win))
@@ -106,6 +109,25 @@ structure Curses = struct
     fun mvaddnstr(y: int, x: int, str: string, n: int) = F_mvaddnstr.f(MLRep.Signed.fromInt y, MLRep.Signed.fromInt x, ZString.dupML str, MLRep.Signed.fromInt n)
     fun mvwaddstr(win, y: int, x: int, str: string) = F_mvwaddstr.f(win, MLRep.Signed.fromInt y, MLRep.Signed.fromInt x, ZString.dupML str)
     fun mvwaddnstr(win, y: int, x: int, str: string, n: int) = F_mvwaddnstr.f(win, MLRep.Signed.fromInt y, MLRep.Signed.fromInt x, ZString.dupML str, MLRep.Signed.fromInt n)
+
+    fun attr_get(attrs, pair, opts) = F_attr_get.f(attrs, pair, opts)
+    fun wattr_get(win, attrs, pair, opts) = F_wattr_get.f(win, attrs, pair, opts)
+    fun attr_set(attrs, pair, opts) = F_attr_set.f(attrs, pair, opts)
+    fun wattr_set(win, attrs, pair, opts) = F_wattr_set.f(win, attrs, pair, opts)
+
+    fun attr_off(attrs, opts) = F_attr_off.f(attrs, opts)
+    fun wattr_off( win, attrs, opts) = F_wattr_off.f(win, attrs, opts)
+    fun attr_on(attrs, opts) = F_attr_on.f(attrs, opts)
+    fun wattr_on(win, attrs, opts) = F_wattr_on.f(win, attrs, opts)
+
+    fun attroff(attrs) = F_attroff.f(attrs)
+    fun wattroff(win, attrs) = F_wattroff.f(win, attrs)
+    fun attron(attrs) = F_attron.f(attrs)
+    fun wattron(win, attrs) = F_wattron.f(win, attrs)
+    fun attrset(attrs) = F_attrset.f(attrs)
+    fun wattrset(win, attrs) = F_wattrset.f(win, attrs)
+
+    fun COLOR_PAIR(pair: int) = F_COLOR_PAIR.f(MLRep.Signed.fromInt pair)
 
     (* ===== Input functions ===== *)
     fun getch() = F_getch.f()

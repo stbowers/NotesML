@@ -11,12 +11,11 @@ structure Window :> WINDOW = struct
     type t_window = {
         win: Curses.WINDOW,
         width: int,
-        height: int,
-        colors: {
-            default: int,
-            inverted: int
-        }
+        height: int
     }
+
+    val COLOR_DEFAULT = 1
+    val COLOR_INVERTED = 2
 
     (* Create a window from a raw curses window
      *)
@@ -25,17 +24,13 @@ structure Window :> WINDOW = struct
         val height = Curses.LINES()
         val _ = Curses.clear()
         val _ = Curses.curs_set(0)
-        val _ = Curses.init_pair(1, Curses.COLOR_WHITE, Curses.COLOR_BLACK)
-        val _ = Curses.init_pair(2, Curses.COLOR_BLACK, Curses.COLOR_WHITE)
+        val _ = Curses.init_pair(COLOR_DEFAULT, Curses.COLOR_WHITE, Curses.COLOR_BLACK)
+        val _ = Curses.init_pair(COLOR_INVERTED, Curses.COLOR_BLACK, Curses.COLOR_WHITE)
     in
         {
             win = curses_win,
             width = width,
-            height = height,
-            colors = {
-                default = 1,
-                inverted = 2
-            }
+            height = height
         }
     end
 
@@ -66,15 +61,18 @@ structure Window :> WINDOW = struct
 
     fun print_header(win: t_window ref, msg: string) = let
         val padding = (#width (!win)) - ((String.size msg) - 6)
-        val line = StringCvt.padRight #"=" padding ("===|" ^ msg)
+        val line = StringCvt.padRight #"=" padding ("===|" ^ msg ^ "|")
     in
-        Curses.mvaddstr(0, 0, line)
+        Curses.attron(Curses.COLOR_PAIR(COLOR_DEFAULT));
+        Curses.mvaddstr(0, 0, line);
+        Curses.attroff(Curses.COLOR_PAIR(COLOR_DEFAULT))
     end
 
     fun render(win: t_window ref, app_data: AppData.t_data ref) = let
-        val _ = print_header(win, "Hello!")
-        val _ = Curses.refresh()
     in
+        Curses.erase();
+        print_header(win, "Hello!");
+        Curses.refresh();
         ()
     end
 end
