@@ -76,6 +76,28 @@ structure Window :> WINDOW = struct
         Curses.attroff(Curses.COLOR_PAIR(COLOR_DEFAULT))
     end
 
+    (* Prints the given string inside of the specified box *)
+    fun print_content(win: t_window ref, content: string, begin_x: int, begin_y: int, width: int, height: int) = let
+        fun print_content_chars([], x, y) = ()
+            |print_content_chars(ch::ct, x, y) = let
+                val (x, y) = if x >= (begin_x + width) then (begin_x, y + 1)
+                    else (x, y)
+            in
+                if y >= (begin_y + height) then ()
+                else if ch = #"\n" then (
+                    print_content_chars(ct, begin_x, y + 1)
+                )
+                else (
+                    Curses.attron(Curses.COLOR_PAIR(COLOR_DEFAULT));
+                    Curses.mvaddch(y, x, ch);
+                    Curses.attroff(Curses.COLOR_PAIR(COLOR_DEFAULT));
+                    print_content_chars(ct, x + 1, y)
+                )
+            end
+    in
+        print_content_chars(String.explode content, begin_x, begin_y)
+    end
+
     fun render(win: t_window ref, app_data: AppData.t_data ref) = let
         val debug_info = "f = " ^ Int.toString (!(#frame (!win)))
         fun print_notes(win: t_window ref, [], index, selected_index) = ()
@@ -94,33 +116,17 @@ structure Window :> WINDOW = struct
                 Curses.mvaddstr(line, !(#browser_width (!win)), "|");
                 print_split(win, line + 1)
             )
-        fun print_content(win: t_window ref, content) = let
-            fun print_content_chars(win: t_window ref, [], x, y) = ()
-                |print_content_chars(win: t_window ref, ch::ct, x, y) = let
-                    val (x, y) = if x >= !(#width (!win)) then (!(#browser_width (!win)), y + 1)
-                        else (x, y)
-                in
-                    if y >= !(#height (!win)) then ()
-                    else if ch = #"\n" then (
-                        print_content_chars(win, ct, !(#browser_width (!win)) + 1, y + 1)
-                    )
-                    else (
-                        Curses.attron(Curses.COLOR_PAIR(COLOR_DEFAULT));
-                        Curses.mvaddch(y, x, ch);
-                        Curses.attroff(Curses.COLOR_PAIR(COLOR_DEFAULT));
-                        print_content_chars(win, ct, x + 1, y)
-                    )
-                end
-        in
-            print_content_chars(win, String.explode content, !(#browser_width (!win)) + 1, 1)
-        end
+        val content_begin_x = !(#browser_width (!win)) + 1
+        val content_begin_y = 1
+        val content_width = !(#content_width (!win))
+        val content_height = !(#height (!win)) - 1
     in
         (#frame (!win)) := !(#frame (!win)) + 1;
         Curses.erase();
         print_header(win, "NotesML " ^ AppData.get_version app_data ^ " {" ^ debug_info ^ "}");
         print_notes(win, AppData.get_notes app_data, 0, AppData.get_selected app_data);
         print_split(win, 1);
-        print_content(win, AppData.get_note_content(app_data, AppData.get_selected app_data));
+        print_content(win, AppData.get_note_content(app_data, AppData.get_selected app_data), content_begin_x, content_begin_y, content_width, content_height);
         Curses.refresh();
         ()
     end
