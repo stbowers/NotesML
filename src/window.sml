@@ -70,12 +70,12 @@ structure Window :> WINDOW = struct
         get_events(nil)
     end
 
-    fun print_header(win: t_window ref, msg: string) = let
+    fun print_header(win: t_window ref, msg: string, attrs) = let
         val line = StringCvt.padRight #"=" (!(#width (!win))) ("===|" ^ msg ^ "|")
     in
-        Curses.attron(Curses.COLOR_PAIR(COLOR_DEFAULT));
+        Curses.attron(attrs);
         Curses.mvaddstr(0, 0, line);
-        Curses.attroff(Curses.COLOR_PAIR(COLOR_DEFAULT))
+        Curses.attroff(attrs)
     end
 
     (* Prints the given string inside of the specified box *)
@@ -101,36 +101,56 @@ structure Window :> WINDOW = struct
     end
 
     fun render(win: t_window ref, app_data: AppData.t_data ref) = let
-        val debug_info = "f=" ^ Int.toString (!(#frame (!win))) ^ ",m=" ^ Int.toString(AppData.get_mode app_data)
-        fun print_notes(win: t_window ref, [], index, selected_index) = ()
-            |print_notes(win: t_window ref, nh::nt, index, selected_index) = let
-                val color = if index = selected_index then COLOR_INVERTED else COLOR_DEFAULT
-                val name_str = StringCvt.padRight #" " (!(#browser_width (!win))) nh
-            in
-                Curses.attron(Curses.COLOR_PAIR(color));
-                Curses.mvaddstr(1 + index, 0, name_str);
-                Curses.attroff(Curses.COLOR_PAIR(color));
-                print_notes(win, nt, index + 1, selected_index)
-            end
-        fun print_split(win: t_window ref, line) =
-            if line = !(#height (!win)) then ()
-            else (
-                Curses.mvaddstr(line, !(#browser_width (!win)), "|");
-                print_split(win, line + 1)
-            )
+        val mode = AppData.get_mode app_data
+        val debug_info = "f=" ^ Int.toString (!(#frame (!win))) ^ ",m=" ^ Int.toString(mode)
+        val header_msg = "NotesML " ^ AppData.get_version app_data ^ " {" ^ debug_info ^ "}"
+
         val content_begin_x = !(#browser_width (!win)) + 1
         val content_begin_y = 1
         val content_width = !(#content_width (!win))
         val content_height = !(#height (!win)) - 1
-        val content_attrs = Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_CONTENT), Curses.A_BOLD])
+        val content_attrs =
+            if mode = 0 then Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_DIM])
+            else Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_CONTENT), Curses.A_BOLD])
+        val browser_default_attrs =
+            if mode = 0 then Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_BOLD])
+            else Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_DIM])
+        val browser_selected_attrs =
+            if mode = 0 then Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_INVERTED)])
+            else Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_INVERTED), Curses.A_DIM])
+        val split_attrs = Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_BOLD])
+        val header_attrs = Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_BOLD])
+
+        fun print_notes([], index) = ()
+            |print_notes(nh::nt, index) = let
+                val attrs = if index = (AppData.get_selected app_data) then browser_selected_attrs else browser_default_attrs
+                val name_str = StringCvt.padRight #" " (!(#browser_width (!win))) nh
+            in
+                Curses.attron(attrs);
+                Curses.mvaddstr(1 + index, 0, name_str);
+                Curses.attroff(attrs);
+                print_notes(nt, index + 1)
+            end
+
+        fun print_split(line) =
+            if line = !(#height (!win)) then ()
+            else (
+                Curses.attron(split_attrs);
+                Curses.mvaddch(line, !(#browser_width (!win)), #"|");
+                Curses.attroff(split_attrs);
+                print_split(line + 1)
+            )
     in
         (#frame (!win)) := !(#frame (!win)) + 1;
         Curses.erase();
-        print_header(win, "NotesML " ^ AppData.get_version app_data ^ " {" ^ debug_info ^ "}");
-        print_notes(win, AppData.get_notes app_data, 0, AppData.get_selected app_data);
-        print_split(win, 1);
+
+        print_header(win, header_msg, header_attrs);
+        print_notes(AppData.get_notes app_data, 0);
+        print_split(1);
         print_content(win, AppData.get_note_content(app_data, AppData.get_selected app_data), content_begin_x, content_begin_y, content_width, content_height, content_attrs);
+
         Curses.refresh();
+
         ()
     end
 end
