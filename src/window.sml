@@ -94,10 +94,26 @@ structure Window :> WINDOW = struct
                 Curses.mvaddstr(line, !(#browser_width (!win)), "|");
                 print_split(win, line + 1)
             )
-        fun print_content(win: t_window ref, content) = (
-            Curses.mvaddstr(1, !(#browser_width (!win)) + 1, content);
-            ()
-        )
+        fun print_content(win: t_window ref, content) = let
+            fun print_content_chars(win: t_window ref, [], x, y) = ()
+                |print_content_chars(win: t_window ref, ch::ct, x, y) = let
+                    val (x, y) = if x >= !(#width (!win)) then (!(#browser_width (!win)), y + 1)
+                        else (x, y)
+                in
+                    if y >= !(#height (!win)) then ()
+                    else if ch = #"\n" then (
+                        print_content_chars(win, ct, !(#browser_width (!win)) + 1, y + 1)
+                    )
+                    else (
+                        Curses.attron(Curses.COLOR_PAIR(COLOR_DEFAULT));
+                        Curses.mvaddch(y, x, ch);
+                        Curses.attroff(Curses.COLOR_PAIR(COLOR_DEFAULT));
+                        print_content_chars(win, ct, x + 1, y)
+                    )
+                end
+        in
+            print_content_chars(win, String.explode content, !(#browser_width (!win)) + 1, 1)
+        end
     in
         (#frame (!win)) := !(#frame (!win)) + 1;
         Curses.erase();

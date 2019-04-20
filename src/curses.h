@@ -17,6 +17,8 @@ typedef chtype attr_t;
  */
 WINDOW *initscr();
 int endwin();
+WINDOW *newwin(int nlines, int ncols, int begin_y, int begin_x);
+int delwin(WINDOW *win);
 
 int refresh();
 
@@ -106,6 +108,11 @@ int COLOR_PAIR(int);
 /* Output functions (NLFFI Does not support variadic arguments, so only format string is used)
  */
 int addch(const chtype ch);
+int waddch(WINDOW *win, const chtype ch);
+int mvaddch(int y, int x, const chtype ch);
+int mvwaddch(WINDOW *win, int y, int x, const chtype ch);
+int echochar(const chtype ch);
+int wechochar(WINDOW *win, const chtype ch);
 
 int addstr(const char *str);
 int addnstr(const char *str, int n);

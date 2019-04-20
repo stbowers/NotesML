@@ -26,6 +26,18 @@ structure Curses = struct
     fun initscr() : WINDOW = F_initscr.f()
 
     fun endwin() = F_endwin.f()
+
+    fun newwin(nlines: int, ncols: int, begin_y: int, begin_x: int) = let
+        val c_nlines = MLRep.Signed.fromInt nlines
+        val c_ncols = MLRep.Signed.fromInt ncols
+        val c_begin_x = MLRep.Signed.fromInt begin_x
+        val c_begin_y = MLRep.Signed.fromInt begin_y
+    in
+        F_newwin.f(c_nlines, c_ncols, c_begin_y, c_begin_x)
+    end
+
+    fun delwin(win) = F_delwin.f(win)
+
     fun refresh() = F_refresh.f()
 
     fun cbreak() = F_cbreak.f()
@@ -100,6 +112,11 @@ structure Curses = struct
 
     (* ===== Output functions ===== *)
     fun addch(out: char) = F_addch.f(MLRep.Signed.fromInt (Char.ord out))
+    (* fun waddch(WINDOW *win, const chtype ch); *)
+    fun mvaddch(y: int, x: int, ch: char) = F_mvaddch.f(MLRep.Signed.fromInt y, MLRep.Signed.fromInt x, MLRep.Signed.fromInt (Char.ord ch))
+    (* fun mvwaddch(WINDOW *win, int y, int x, const chtype ch); *)
+    (* fun echochar(const chtype ch); *)
+    (* fun wechochar(WINDOW *win, const chtype ch); *)
 
     fun addstr(str: string) = F_addstr.f(ZString.dupML str)
     fun addnstr(str: string, n: int) = F_addnstr.f(ZString.dupML str, MLRep.Signed.fromInt n)
