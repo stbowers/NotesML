@@ -48,5 +48,5 @@ structure AppData :> APPDATA = struct
     fun get_version(data: t_data ref) = #version (!data)
     fun get_notes(data: t_data ref) = !(#notes (!data))
     fun get_selected(data: t_data ref) = !(#selected (!data))
-    fun get_note_content(data: t_data ref, index: int) = "" 
+    fun get_note_content(data: t_data ref, index: int) = (List.nth((!(#notes (!data))), index)) ^ " - Some content in a note" 
 end

@@ -10,8 +10,10 @@ end
 structure Window :> WINDOW = struct
     type t_window = {
         win: Curses.WINDOW,
-        width: int,
-        height: int,
+        width: int ref,
+        height: int ref,
+        browser_width: int ref,
+        content_width: int ref,
         frame: int ref
     }
 
@@ -23,6 +25,9 @@ structure Window :> WINDOW = struct
     fun fromScr(curses_win) = let
         val width = Curses.COLS()
         val height = Curses.LINES()
+        val browser_width = Real.floor(0.25 * Real.fromInt width)
+        val content_width = width - browser_width - 1
+
         val _ = Curses.clear()
         val _ = Curses.curs_set(0)
         val _ = Curses.init_pair(COLOR_DEFAULT, Curses.COLOR_WHITE, Curses.COLOR_BLACK)
@@ -30,8 +35,10 @@ structure Window :> WINDOW = struct
     in
         {
             win = curses_win,
-            width = width,
-            height = height,
+            width = ref width,
+            height = ref height,
+            browser_width = ref browser_width,
+            content_width = ref content_width,
             frame = ref 0
         }
     end
@@ -62,7 +69,7 @@ structure Window :> WINDOW = struct
     end
 
     fun print_header(win: t_window ref, msg: string) = let
-        val line = StringCvt.padRight #"=" (#width (!win)) ("===|" ^ msg ^ "|")
+        val line = StringCvt.padRight #"=" (!(#width (!win))) ("===|" ^ msg ^ "|")
     in
         Curses.attron(Curses.COLOR_PAIR(COLOR_DEFAULT));
         Curses.mvaddstr(0, 0, line);
@@ -71,20 +78,33 @@ structure Window :> WINDOW = struct
 
     fun render(win: t_window ref, app_data: AppData.t_data ref) = let
         val debug_info = "f = " ^ Int.toString (!(#frame (!win)))
-        fun print_notes(win, [], index, selected_index) = ()
-            |print_notes(win, nh::nt, index, selected_index) = let
+        fun print_notes(win: t_window ref, [], index, selected_index) = ()
+            |print_notes(win: t_window ref, nh::nt, index, selected_index) = let
                 val color = if index = selected_index then COLOR_INVERTED else COLOR_DEFAULT
+                val name_str = StringCvt.padRight #" " (!(#browser_width (!win))) nh
             in
                 Curses.attron(Curses.COLOR_PAIR(color));
-                Curses.mvaddstr(1 + index, 0, nh);
+                Curses.mvaddstr(1 + index, 0, name_str);
                 Curses.attroff(Curses.COLOR_PAIR(color));
                 print_notes(win, nt, index + 1, selected_index)
             end
+        fun print_split(win: t_window ref, line) =
+            if line = !(#height (!win)) then ()
+            else (
+                Curses.mvaddstr(line, !(#browser_width (!win)), "|");
+                print_split(win, line + 1)
+            )
+        fun print_content(win: t_window ref, content) = (
+            Curses.mvaddstr(1, !(#browser_width (!win)) + 1, content);
+            ()
+        )
     in
         (#frame (!win)) := !(#frame (!win)) + 1;
         Curses.erase();
         print_header(win, "NotesML " ^ AppData.get_version app_data ^ " {" ^ debug_info ^ "}");
         print_notes(win, AppData.get_notes app_data, 0, AppData.get_selected app_data);
+        print_split(win, 1);
+        print_content(win, AppData.get_note_content(app_data, AppData.get_selected app_data));
         Curses.refresh();
         ()
     end
