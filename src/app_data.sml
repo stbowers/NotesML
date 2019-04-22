@@ -26,12 +26,21 @@ structure AppData :> APPDATA = struct
         mode: int ref
     }
 
-    val default = {
-        version = "v0.1.0",
-        notes = ref ["Note1", "Note2", "Note3"],
-        selected = ref 0,
-        mode = ref 0
-    }
+    val default = let
+        val notes_dir = OS.FileSys.openDir "./notes"
+        fun get_notes(notes) = let val next_note = OS.FileSys.readDir notes_dir in
+            case next_note of
+                SOME note => let val note_name = String.substring (note, 0, String.size(note) - 4) in get_notes(notes @ [note_name]) end
+                |NONE => notes
+        end
+    in 
+        {
+            version = "v0.1.0",
+            notes = ref(get_notes(["New Note"])),
+            selected = ref 0,
+            mode = ref 0
+        }
+    end
 
     (* Processes a single event, returning a list of any new events produced *)
     fun handle_event(data: t_data ref, Event.Quit code) = []
@@ -43,11 +52,16 @@ structure AppData :> APPDATA = struct
                 []
             )
             else if ch = MLRep.Signed.fromInt (Char.ord #"j") then (
-                #selected (!data) := Int.min(2, !(#selected (!data)) + 1);
+                #selected (!data) := Int.min(List.length(!(#notes (!data))) - 1, !(#selected (!data)) + 1);
                 []
             )
             else if ch = MLRep.Signed.fromInt(Char.ord #"\t") then (
                 #mode (!data) := 1;
+                if !(#selected (!data)) = 0 then (
+                    #notes (!data) := (!(#notes (!data)) @ [""]);
+                    #selected (!data) := (List.length(!(#notes (!data))) - 1);
+                    ()
+                ) else ();
                 []
             )
             else []
@@ -73,5 +87,15 @@ structure AppData :> APPDATA = struct
     fun get_notes(data: t_data ref) = !(#notes (!data))
     fun get_selected(data: t_data ref) = !(#selected (!data))
     fun get_mode(data: t_data ref) = !(#mode (!data))
-    fun get_note_content(data: t_data ref, index: int) = (List.nth((!(#notes (!data))), index)) ^ " - Some content in a note that goes on for a while. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\nTesting new lines\nTest\ntest\n\nLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." 
+    fun get_note_content(data: t_data ref, 0) = "" (* Index 0 = New Note, contents should be blank *)
+        |get_note_content(data: t_data ref, index: int) = let
+        val note = List.nth(!(#notes (!data)), index)
+        val filename = "./notes/" ^ note ^ ".txt"
+        val instream = TextIO.openIn(filename)
+        val file_text = TextIO.inputAll instream
+    in
+        TextIO.closeIn instream;
+        file_text
+    end
+    handle _ => "Error reading file: " ^ List.nth(!(#notes (!data)), index) ^ ".txt"
 end
