@@ -3,7 +3,7 @@ struct
     val ONLY_UPDATE_ON_USER_INPUT = true
 
     fun run(stdscr, (prog_name, args)) = let
-        val app_data = ref AppData.default
+        val app_data = ref (AppData.default())
         val window = ref (Window.fromScr(stdscr))
         fun run_recursive(app_data, event_queue) = let
             val _ = Window.render(window, app_data)

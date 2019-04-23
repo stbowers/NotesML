@@ -30,7 +30,11 @@ structure Curses = struct
     val A_TOP = 0
     val A_VERTICAL = 0
 
-    val KEY_STAB = MLRep.Signed.fromInt 0524
+    val KEY_STAB = MLRep.Signed.fromInt 0
+    val KEY_DOWN = MLRep.Signed.fromInt 402
+    val KEY_UP = MLRep.Signed.fromInt 403
+    val KEY_LEFT = MLRep.Signed.fromInt 404
+    val KEY_RIGHT = MLRep.Signed.fromInt 405
 
     (* ===== External variables ===== *)
     fun COLS() = MLRep.Signed.toInt(C.Get.sint(G_COLS.obj()))
@@ -127,6 +131,9 @@ structure Curses = struct
     fun wclrtobot(win) = F_wclrtobot.f(win)
     fun clrtoeol() = F_clrtoeol.f()
     fun wclrtoeol(win) = F_wclrtoeol.f(win)
+
+    fun move(y: int, x: int) = F_move.f(MLRep.Signed.fromInt y, MLRep.Signed.fromInt x)
+    fun wmove(win, y: int, x: int) = F_wmove.f(win, MLRep.Signed.fromInt y, MLRep.Signed.fromInt x)
 
     (* ===== Output functions ===== *)
     fun addch(out: char) = F_addch.f(MLRep.Signed.fromInt (Char.ord out))

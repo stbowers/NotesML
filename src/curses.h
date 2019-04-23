@@ -105,6 +105,9 @@ int wstandout(WINDOW *win);
 
 int COLOR_PAIR(int);
 
+int move(int y, int x);
+int wmove(WINDOW *win, int y, int x);
+
 /* Output functions (NLFFI Does not support variadic arguments, so only format string is used)
  */
 int addch(const chtype ch);

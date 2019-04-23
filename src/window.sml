@@ -20,6 +20,7 @@ structure Window :> WINDOW = struct
     val COLOR_DEFAULT = 1
     val COLOR_INVERTED = 2
     val COLOR_CONTENT = 3
+    val COLOR_CONTENT_CURSOR = 4
 
     (* Create a window from a raw curses window
      *)
@@ -34,6 +35,7 @@ structure Window :> WINDOW = struct
         val _ = Curses.init_pair(COLOR_DEFAULT, Curses.COLOR_WHITE, Curses.COLOR_BLACK)
         val _ = Curses.init_pair(COLOR_INVERTED, Curses.COLOR_BLACK, Curses.COLOR_WHITE)
         val _ = Curses.init_pair(COLOR_CONTENT, Curses.COLOR_CYAN, Curses.COLOR_BLACK)
+        val _ = Curses.init_pair(COLOR_CONTENT_CURSOR, Curses.COLOR_CYAN, Curses.COLOR_WHITE)
     in
         {
             win = curses_win,
@@ -79,7 +81,7 @@ structure Window :> WINDOW = struct
     end
 
     (* Prints the given string inside of the specified box *)
-    fun print_content(win: t_window ref, content: string, begin_x: int, begin_y: int, width: int, height: int, attrs: int) = let
+    fun print_content(win: t_window ref, content: string, begin_x: int, begin_y: int, width: int, height: int, cursor_x: int, cursor_y: int, default_attrs: int, cursor_attrs: int) = let
         fun print_content_chars([], x, y) = ()
             |print_content_chars(ch::ct, x, y) = let
                 val (x, y) = if x >= (begin_x + width) then (begin_x, y + 1)
@@ -89,12 +91,14 @@ structure Window :> WINDOW = struct
                 else if ch = #"\n" then (
                     print_content_chars(ct, begin_x, y + 1)
                 )
-                else (
+                else let
+                    val attrs = if (x = cursor_x) andalso (y = cursor_y) then cursor_attrs else default_attrs
+                in
                     Curses.attron(attrs);
                     Curses.mvaddch(y, x, ch);
                     Curses.attroff(attrs);
                     print_content_chars(ct, x + 1, y)
-                )
+                end
             end
     in
         print_content_chars(String.explode content, begin_x, begin_y)
@@ -109,9 +113,14 @@ structure Window :> WINDOW = struct
         val content_begin_y = 1
         val content_width = !(#content_width (!win))
         val content_height = !(#height (!win)) - 1
-        val content_attrs =
+        val content_cursor_x = content_begin_x + AppData.get_content_cursor_x app_data
+        val content_cursor_y = content_begin_y + AppData.get_content_cursor_y app_data
+        val content_default_attrs =
             if mode = 0 then Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_DIM])
             else Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_CONTENT), Curses.A_BOLD])
+        val content_cursor_attrs =
+            if mode = 0 then Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_DIM])
+            else Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_CONTENT_CURSOR), Curses.A_BOLD])
         val browser_default_attrs =
             if mode = 0 then Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_BOLD])
             else Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_DIM])
@@ -147,7 +156,12 @@ structure Window :> WINDOW = struct
         print_header(win, header_msg, header_attrs);
         print_notes(AppData.get_notes app_data, 0);
         print_split(1);
-        print_content(win, AppData.get_note_content(app_data, AppData.get_selected app_data), content_begin_x, content_begin_y, content_width, content_height, content_attrs);
+
+        Curses.attron(content_cursor_attrs);
+        Curses.mvaddch(content_cursor_y, content_cursor_x, #" ");
+        Curses.attroff(content_cursor_attrs);
+        print_content(win, AppData.get_note_content(app_data, AppData.get_selected app_data), content_begin_x, content_begin_y, content_width, content_height,
+            content_cursor_x, content_cursor_y, content_default_attrs, content_cursor_attrs);
 
         Curses.refresh();
 
