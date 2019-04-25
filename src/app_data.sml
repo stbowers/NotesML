@@ -8,8 +8,8 @@ signature APPDATA = sig
     val get_notes: t_data ref -> string list
     val get_selected: t_data ref -> int
     val get_mode: t_data ref -> int
+    val get_content_cursor_line: t_data ref -> int
     val get_content_cursor_x: t_data ref -> int
-    val get_content_cursor_y: t_data ref -> int
 
     val get_note_content: t_data ref * int -> string
     val write_back_note: t_data ref * int -> unit
@@ -24,6 +24,9 @@ structure AppData :> APPDATA = struct
      *   1 - normal note mode, input is used to navigate inside the note (vim-style)
      *   2 - insert note mode, input is used to modify the note
      *   3 - visual note mode, input is used to modify a visual selection in the note
+     *
+     * content_cache: If SOME, stores a cache of the current content to be able to use without reading/writing to the file every frame
+     * content_cursor: index into content string where the cursor is
      *)
     type t_data = {
         version: string,
@@ -32,8 +35,8 @@ structure AppData :> APPDATA = struct
         mode: int ref,
 
         content_cache: string option ref,
-        content_cursor_x: int ref,
-        content_cursor_y: int ref
+        content_cursor_line: int ref,
+        content_cursor_x: int ref
     }
 
     fun default() = let
@@ -51,8 +54,8 @@ structure AppData :> APPDATA = struct
             mode = ref 0,
 
             content_cache = ref NONE: string option ref,
-            content_cursor_x = ref 0,
-            content_cursor_y = ref 0
+            content_cursor_line = ref 0,
+            content_cursor_x = ref 0
         }
     end
 
@@ -99,17 +102,10 @@ structure AppData :> APPDATA = struct
             )
             else []
         )
-        else if !(#mode (!data)) = 1 then (
+        else if !(#mode (!data)) = 1 then let
+            in
             if ch = MLRep.Signed.fromInt(Char.ord #"\t") then (
                 #mode (!data) := 0;
-                []
-            )
-            else if ch = MLRep.Signed.fromInt(Char.ord #"k") then (
-                #content_cursor_y (!data) := Int.max(0, !(#content_cursor_y (!data)) - 1);
-                []
-            )
-            else if ch = MLRep.Signed.fromInt(Char.ord #"j") then (
-                #content_cursor_y (!data) := Int.min(3, !(#content_cursor_y (!data)) + 1);
                 []
             )
             else if ch = MLRep.Signed.fromInt(Char.ord #"h") then (
@@ -120,15 +116,29 @@ structure AppData :> APPDATA = struct
                 #content_cursor_x (!data) := Int.min(3, !(#content_cursor_x (!data)) + 1);
                 []
             )
+            else if ch = MLRep.Signed.fromInt(Char.ord #"k") then (
+                #content_cursor_line (!data) := Int.max(0,
+                !(#content_cursor_line (!data)) - 1);
+                []
+            )
+            else if ch = MLRep.Signed.fromInt(Char.ord #"j") then (
+                #content_cursor_line (!data) := Int.min(4,
+                !(#content_cursor_line (!data)) + 1);
+                []
+            )
             else if ch = MLRep.Signed.fromInt(Char.ord #"i") then (
                 #mode (!data) := 2;
                 []
             )
             else []
-        )
+        end
         else if !(#mode (!data)) = 2 then (
             (* Mode 2 = insert note mode *)
-            []
+            if ch = MLRep.Signed.fromInt(27) then (
+                #mode (!data) := 1;
+                []
+            )
+            else []
         )
         else []
 
@@ -144,8 +154,8 @@ structure AppData :> APPDATA = struct
     fun get_notes(data: t_data ref) = !(#notes (!data))
     fun get_selected(data: t_data ref) = !(#selected (!data))
     fun get_mode(data: t_data ref) = !(#mode (!data))
+    fun get_content_cursor_line(data: t_data ref) = !(#content_cursor_line (!data))
     fun get_content_cursor_x(data: t_data ref) = !(#content_cursor_x (!data))
-    fun get_content_cursor_y(data: t_data ref) = !(#content_cursor_y (!data))
 
     fun get_note_content(data: t_data ref, index: int) = case !(#content_cache (!data)) of
         SOME content => content

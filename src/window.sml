@@ -81,28 +81,53 @@ structure Window :> WINDOW = struct
     end
 
     (* Prints the given string inside of the specified box *)
-    fun print_content(win: t_window ref, content: string, begin_x: int, begin_y: int, width: int, height: int, cursor_x: int, cursor_y: int, default_attrs: int, cursor_attrs: int) = let
-        fun print_content_chars([], x, y) = ()
-            |print_content_chars(ch::ct, x, y) = let
-                val (x, y) = if x >= (begin_x + width) then (begin_x, y + 1)
-                    else (x, y)
-            in
-                if y >= (begin_y + height) then ()
-                else if ch = #"\n" then (
-                    print_content_chars(ct, begin_x, y + 1)
-                )
-                else let
-                    val attrs = if (x = cursor_x) andalso (y = cursor_y) then cursor_attrs else default_attrs
-                in
-                    Curses.attron(attrs);
-                    Curses.mvaddch(y, x, ch);
-                    Curses.attroff(attrs);
-                    print_content_chars(ct, x + 1, y)
-                end
-            end
-    in
-        print_content_chars(String.explode content, begin_x, begin_y)
-    end
+    fun print_content(win: t_window ref, content: string, begin_x: int, begin_y:
+      int, width: int, height: int, cursor_line: int, cursor_x: int,
+      default_attrs: int, cursor_line_attrs: int, cursor_char_attrs: int) = let
+          fun print_line(line, y, softline, softx) = let
+              val line_attrs = if softline = cursor_line then cursor_line_attrs
+                        else default_attrs
+              val (current_line, next_line) =
+                  if String.size line > width then (
+                      String.extract(line, 0, SOME width),
+                      SOME (String.extract(line, width, NONE))
+                  )
+                  else (
+                      StringCvt.padRight #" " width line,
+                      NONE
+                  )
+              val (line_left, line_cursor, line_right) =
+                  if softline = cursor_line andalso cursor_x >= softx andalso
+                  cursor_x < softx + width then (
+                      String.substring(current_line, 0, cursor_x - softx),
+                      String.substring(current_line, cursor_x - softx, 1),
+                      String.extract(current_line, cursor_x - softx + 1, NONE)
+                  )
+                  else (current_line, "", "")
+          in
+              Curses.attron(line_attrs);
+              Curses.mvaddstr(y, begin_x, line_left);
+              Curses.attroff(line_attrs);
+              Curses.attron(cursor_char_attrs);
+              Curses.mvaddstr(y, begin_x + (String.size line_left), line_cursor);
+              Curses.attroff(cursor_char_attrs);
+              Curses.attron(line_attrs);
+              Curses.mvaddstr(y, begin_x + (String.size line_left) + (String.size line_cursor), line_right);
+              Curses.attroff(line_attrs);
+              case next_line of
+                   SOME line => print_line(line, y + 1, softline, softx + width)
+                  |NONE => y + 1
+          end
+
+          fun print_lines([], y, softline) = ()
+              |print_lines(line::lines, y, softline) = let
+                  val next_line = print_line(line, y, softline, 0)
+              in
+                  print_lines(lines, next_line, softline + 1)
+              end
+        in
+            print_lines(String.fields (fn ch => ch = #"\n") content, begin_y, 0)
+        end
 
     fun render(win: t_window ref, app_data: AppData.t_data ref) = let
         val mode = AppData.get_mode app_data
@@ -113,12 +138,15 @@ structure Window :> WINDOW = struct
         val content_begin_y = 1
         val content_width = !(#content_width (!win))
         val content_height = !(#height (!win)) - 1
-        val content_cursor_x = content_begin_x + AppData.get_content_cursor_x app_data
-        val content_cursor_y = content_begin_y + AppData.get_content_cursor_y app_data
+        val content_cursor_line = AppData.get_content_cursor_line app_data
+        val content_cursor_x = AppData.get_content_cursor_x app_data
         val content_default_attrs =
             if mode = 0 then Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_DIM])
             else Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_CONTENT), Curses.A_BOLD])
-        val content_cursor_attrs =
+        val content_cursor_line_attrs =
+            if mode = 0 then Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_DIM])
+            else Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_CONTENT), Curses.A_UNDERLINE])
+        val content_cursor_char_attrs =
             if mode = 0 then Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_DEFAULT), Curses.A_DIM])
             else Curses.combine_attrs([Curses.COLOR_PAIR(COLOR_CONTENT_CURSOR), Curses.A_BOLD])
         val browser_default_attrs =
@@ -157,11 +185,9 @@ structure Window :> WINDOW = struct
         print_notes(AppData.get_notes app_data, 0);
         print_split(1);
 
-        Curses.attron(content_cursor_attrs);
-        Curses.mvaddch(content_cursor_y, content_cursor_x, #" ");
-        Curses.attroff(content_cursor_attrs);
         print_content(win, AppData.get_note_content(app_data, AppData.get_selected app_data), content_begin_x, content_begin_y, content_width, content_height,
-            content_cursor_x, content_cursor_y, content_default_attrs, content_cursor_attrs);
+            content_cursor_line, content_cursor_x, content_default_attrs, content_cursor_line_attrs,
+            content_cursor_char_attrs);
 
         Curses.refresh();
 
