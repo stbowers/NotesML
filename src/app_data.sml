@@ -204,6 +204,49 @@ structure AppData :> APPDATA = struct
                 #content_cursor_x (!data) := !(#content_current_line_width (!data));
                 []
             )
+            else if ch = MLRep.Signed.fromInt(Char.ord #"o") then let
+                val content_index = (
+                    #content_cursor_x (!data) := !(#content_current_line_width (!data));
+                    get_content_index(data)
+                )
+            in
+                case !(#content_cache (!data)) of
+                    NONE => ()
+                   |SOME content => (
+                        #content_cursor_x (!data) := 0;
+                        #content_cursor_line (!data) := !(#content_cursor_line
+                        (!data)) + 1;
+                        #content_cache (!data) := SOME (String.extract(content,
+                        0, SOME content_index) ^
+                        "\n" ^
+                        String.extract(content, content_index, NONE));
+                        ()
+                   );
+                write_back_note(data, !(#selected (!data)));
+
+                #mode (!data) := 2;
+                []
+            end
+            else if ch = MLRep.Signed.fromInt(Char.ord #"O") then let
+                val content_index = (
+                    #content_cursor_x (!data) := 0;
+                    get_content_index(data)
+                )
+            in
+                case !(#content_cache (!data)) of
+                    NONE => ()
+                   |SOME content => (
+                        #content_cache (!data) := SOME (String.extract(content,
+                        0, SOME content_index) ^
+                        "\n" ^
+                        String.extract(content, content_index, NONE));
+                        ()
+                   );
+                write_back_note(data, !(#selected (!data)));
+
+                #mode (!data) := 2;
+                []
+            end
             else []
         end
         else if !(#mode (!data)) = 2 then (
@@ -224,6 +267,24 @@ structure AppData :> APPDATA = struct
                             (!data)) - 1;
                         #content_cache (!data) := SOME (String.extract(content,
                         0, SOME (content_index - 1)) ^
+                        String.extract(content, content_index, NONE));
+                        ()
+                   );
+                write_back_note(data, !(#selected (!data)));
+                []
+            end
+            else if ch = MLRep.Signed.fromInt(Char.ord #"\n") then let
+                val content_index = get_content_index(data)
+            in
+                case !(#content_cache (!data)) of
+                    NONE => ()
+                   |SOME content => (
+                        #content_cursor_x (!data) := 0;
+                        #content_cursor_line (!data) := !(#content_cursor_line
+                        (!data)) + 1;
+                        #content_cache (!data) := SOME (String.extract(content,
+                        0, SOME content_index) ^
+                        "\n" ^
                         String.extract(content, content_index, NONE));
                         ()
                    );
