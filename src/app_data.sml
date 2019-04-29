@@ -36,26 +36,37 @@ structure AppData :> APPDATA = struct
 
         content_cache: string option ref,
         content_cursor_line: int ref,
-        content_cursor_x: int ref
+        content_cursor_x: int ref,
+        content_lines: int ref,
+        content_current_line_width: int ref
     }
 
-    fun default() = let
+    fun get_notes() =
+    let
         val notes_dir = OS.FileSys.openDir "./notes"
-        fun get_notes(notes) = let val next_note = OS.FileSys.readDir notes_dir in
+        fun read_files(notes) = let val next_note = OS.FileSys.readDir notes_dir in
             case next_note of
-                SOME note => let val note_name = String.substring (note, 0, String.size(note) - 4) in get_notes(notes @ [note_name]) end
+                SOME note => let val note_name = String.substring (note, 0,
+                String.size(note) - 4) in read_files(notes @ [note_name]) end
                 |NONE => notes
         end
+    in
+        read_files([])
+    end
+
+    fun default() = let
     in 
         {
             version = "v0.1.0",
-            notes = ref(get_notes(["New Note"])),
+            notes = ref(["New Note"] @ get_notes()),
             selected = ref 0,
             mode = ref 0,
 
             content_cache = ref NONE: string option ref,
             content_cursor_line = ref 0,
-            content_cursor_x = ref 0
+            content_cursor_x = ref 0,
+            content_lines = ref 0,
+            content_current_line_width = ref 0
         }
     end
 
@@ -64,14 +75,27 @@ structure AppData :> APPDATA = struct
         val content = case !(#content_cache (!data)) of
             SOME string => string
             |NONE => ""
-        
-        val note = List.nth(!(#notes (!data)), index)
-        val filename = "./notes/" ^ note ^ ".txt"
-        val outstream = TextIO.openOut(filename)
+
+        val original_name = List.nth(!(#notes (!data)), index)
+        val original_file = "./notes/" ^ original_name ^ ".txt"
+
+        val lines = String.fields (fn ch => ch = #"\n") content
+        val name = List.nth(lines, 0)
+        val file = "./notes/" ^ name ^ ".txt"
+
+        val outstream = TextIO.openOut(file)
     in
-        TextIO.output(outstream, content);
-        TextIO.closeOut outstream;
-        ()
+        if content = "" then OS.FileSys.remove(original_file)
+        else (
+            OS.FileSys.rename{old = original_file, new = file};
+
+            TextIO.output(outstream, content);
+            TextIO.closeOut outstream;
+
+
+            #notes (!data) := ["New Note"] @ get_notes();
+            ()
+        )
     end
 
     (* Processes a single event, returning a list of any new events produced *)
@@ -105,6 +129,7 @@ structure AppData :> APPDATA = struct
         else if !(#mode (!data)) = 1 then let
             in
             if ch = MLRep.Signed.fromInt(Char.ord #"\t") then (
+                write_back_note(data, !(#selected (!data)));
                 #mode (!data) := 0;
                 []
             )
@@ -113,17 +138,39 @@ structure AppData :> APPDATA = struct
                 []
             )
             else if ch = MLRep.Signed.fromInt(Char.ord #"l") then (
-                #content_cursor_x (!data) := Int.min(3, !(#content_cursor_x (!data)) + 1);
+                #content_cursor_x (!data) := Int.min(!(#content_current_line_width (!data)), !(#content_cursor_x (!data)) + 1);
                 []
             )
             else if ch = MLRep.Signed.fromInt(Char.ord #"k") then (
                 #content_cursor_line (!data) := Int.max(0,
                 !(#content_cursor_line (!data)) - 1);
+
+                case !(#content_cache (!data)) of
+                    NONE => ()
+                   |SOME content => let
+                        val lines = String.fields (fn ch => ch = #"\n") content
+                    in
+                        #content_current_line_width (!data) :=
+                        String.size(List.nth(lines, !(#content_cursor_line
+                        (!data))))
+                    end;
+
                 []
             )
             else if ch = MLRep.Signed.fromInt(Char.ord #"j") then (
-                #content_cursor_line (!data) := Int.min(4,
+                #content_cursor_line (!data) := Int.min(!(#content_lines (!data)),
                 !(#content_cursor_line (!data)) + 1);
+
+                case !(#content_cache (!data)) of
+                    NONE => ()
+                   |SOME content => let
+                        val lines = String.fields (fn ch => ch = #"\n") content
+                    in
+                        #content_current_line_width (!data) :=
+                        String.size(List.nth(lines, !(#content_cursor_line
+                        (!data))))
+                    end;
+
                 []
             )
             else if ch = MLRep.Signed.fromInt(Char.ord #"i") then (
@@ -138,7 +185,16 @@ structure AppData :> APPDATA = struct
                 #mode (!data) := 1;
                 []
             )
-            else []
+            else (
+                case !(#content_cache (!data)) of
+                    NONE => ()
+                   |SOME content => (
+                        #content_cache (!data) := SOME (content ^
+                        String.str(Char.chr(MLRep.Signed.toInt ch)));
+                        ()
+                   );
+                []
+            )
         )
         else []
 
@@ -172,9 +228,11 @@ structure AppData :> APPDATA = struct
             handle _ => "Error reading file: " ^ List.nth(!(#notes (!data)), index) ^ ".txt"
 
             val content = if index = 0 then "" else load_from_file()
+            val lines = String.fields (fn ch => ch = #"\n") content
         in
             #content_cache (!data) := SOME content;
+            #content_lines (!data) := List.length(lines) - 1;
+            #content_current_line_width (!data) := String.size(List.nth(lines, 0));
             content
         end
-
 end
