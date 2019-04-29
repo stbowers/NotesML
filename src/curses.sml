@@ -193,10 +193,10 @@ structure Curses = struct
         val _ = if has_colors() then (start_color(); ()) else ()
         val _ = cbreak()
         val _ = noecho()
-        val _ = keypad(stdscr, true)
+        val _ = keypad(stdscr, false)
 
         fun exit(ret: 'b result) = let
-            val _ = keypad(stdscr, false)
+            val _ = keypad(stdscr, true)
             val _ = echo()
             val _ = nocbreak()
             val _ = endwin()

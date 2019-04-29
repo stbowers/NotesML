@@ -13,6 +13,7 @@ signature APPDATA = sig
 
     val get_note_content: t_data ref * int -> string
     val write_back_note: t_data ref * int -> unit
+    val get_content_index: t_data ref -> int
 end
 
 structure AppData :> APPDATA = struct
@@ -98,6 +99,18 @@ structure AppData :> APPDATA = struct
         )
     end
 
+    fun get_content_index(data: t_data ref) = case !(#content_cache (!data)) of
+        NONE => 0
+       |SOME content => let
+            val lines = String.fields (fn ch => ch = #"\n") content
+            fun get_line_index(lines, 0, running_index) = running_index
+               |get_line_index(line_head::line_tail, line, running_index) =
+                    get_line_index(line_tail, line - 1, running_index +
+                        String.size(line_head) + 1)
+        in
+            get_line_index(lines, !(#content_cursor_line (!data)), !(#content_cursor_x (!data)))
+        end
+
     (* Processes a single event, returning a list of any new events produced *)
     fun handle_event(data: t_data ref, Event.Quit code) = []
         |handle_event(data: t_data ref, Event.Input ch) =
@@ -115,7 +128,9 @@ structure AppData :> APPDATA = struct
                 #content_cache (!data) := NONE; (* Invalidate cache *)
                 []
             )
-            else if ch = MLRep.Signed.fromInt(Char.ord #"\t") then (
+            else if ch = MLRep.Signed.fromInt(Char.ord #"\t")
+                orelse ch = MLRep.Signed.fromInt(Char.ord #"\n")
+            then (
                 #mode (!data) := 1;
                 if !(#selected (!data)) = 0 then (
                     #notes (!data) := (!(#notes (!data)) @ [""]);
@@ -128,7 +143,9 @@ structure AppData :> APPDATA = struct
         )
         else if !(#mode (!data)) = 1 then let
             in
-            if ch = MLRep.Signed.fromInt(Char.ord #"\t") then (
+            if ch = MLRep.Signed.fromInt(Char.ord #"\t")
+                orelse ch = MLRep.Signed.fromInt(27)
+            then (
                 write_back_note(data, !(#selected (!data)));
                 #mode (!data) := 0;
                 []
@@ -177,24 +194,60 @@ structure AppData :> APPDATA = struct
                 #mode (!data) := 2;
                 []
             )
+            else if ch = MLRep.Signed.fromInt(Char.ord #"I") then (
+                #mode (!data) := 2;
+                #content_cursor_x (!data) := 0;
+                []
+            )
+            else if ch = MLRep.Signed.fromInt(Char.ord #"A") then (
+                #mode (!data) := 2;
+                #content_cursor_x (!data) := !(#content_current_line_width (!data));
+                []
+            )
             else []
         end
         else if !(#mode (!data)) = 2 then (
             (* Mode 2 = insert note mode *)
             if ch = MLRep.Signed.fromInt(27) then (
                 #mode (!data) := 1;
+                #content_cursor_x (!data) := Int.max(0, !(#content_cursor_x (!data)) - 1);
+                write_back_note(data, !(#selected (!data)));
                 []
             )
-            else (
+            else if ch = MLRep.Signed.fromInt(127) then let
+                val content_index = get_content_index(data)
+            in
                 case !(#content_cache (!data)) of
                     NONE => ()
                    |SOME content => (
-                        #content_cache (!data) := SOME (content ^
-                        String.str(Char.chr(MLRep.Signed.toInt ch)));
+                        #content_cursor_x (!data) := !(#content_cursor_x
+                            (!data)) - 1;
+                        #content_cache (!data) := SOME (String.extract(content,
+                        0, SOME (content_index - 1)) ^
+                        String.extract(content, content_index, NONE));
                         ()
                    );
+                write_back_note(data, !(#selected (!data)));
                 []
-            )
+            end
+            else if Char.isPrint(Char.chr(MLRep.Signed.toInt ch)) then let
+                val content_index = get_content_index(data)
+            in
+                case !(#content_cache (!data)) of
+                    NONE => ()
+                   |SOME content => (
+                        #content_cursor_x (!data) := !(#content_cursor_x
+                            (!data)) + 1;
+                        #content_cache (!data) := SOME (String.extract(content,
+                        0, SOME content_index) ^
+                        String.str(Char.chr(MLRep.Signed.toInt ch)) ^
+                        String.extract(content, content_index, NONE));
+                        ()
+                   );
+                write_back_note(data, !(#selected (!data)));
+                []
+            end
+            else []
         )
         else []
 
