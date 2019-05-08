@@ -77,26 +77,32 @@ structure AppData :> APPDATA = struct
             SOME string => string
             |NONE => ""
 
-        val original_name = List.nth(!(#notes (!data)), index)
-        val original_file = "./notes/" ^ original_name ^ ".txt"
+        val file = let
+            val original_name = List.nth(!(#notes (!data)), index)
+            val original_file = "./notes/" ^ original_name ^ ".txt"
 
-        val lines = String.fields (fn ch => ch = #"\n") content
-        val name = List.nth(lines, 0)
-        val file = "./notes/" ^ name ^ ".txt"
+            val lines = String.fields (fn ch => ch = #"\n") content
+            val name = List.nth(lines, 0)
+            val file = "./notes/" ^ name ^ ".txt"
+        in
+            if OS.FileSys.access(original_file, []) then OS.FileSys.rename{old = original_file, new = file}
+            else ();
 
-        val outstream = TextIO.openOut(file)
+            file
+        end
     in
-        if content = "" then OS.FileSys.remove(original_file)
-        else (
-            OS.FileSys.rename{old = original_file, new = file};
-
+        if content = "" then ()
+        else let
+            val outstream = TextIO.openOut(file)
+        in
             TextIO.output(outstream, content);
             TextIO.closeOut outstream;
 
 
             #notes (!data) := ["New Note"] @ get_notes();
             ()
-        )
+        end
+
     end
 
     fun get_content_index(data: t_data ref) = case !(#content_cache (!data)) of
@@ -114,7 +120,7 @@ structure AppData :> APPDATA = struct
     (* Processes a single event, returning a list of any new events produced *)
     fun handle_event(data: t_data ref, Event.Quit code) = []
         |handle_event(data: t_data ref, Event.Input ch) =
-        if ch = MLRep.Signed.fromInt (Char.ord #"q") then [Event.Quit 0]
+        if (!(#mode (!data)) = 0 orelse !(#mode (!data)) = 1) andalso ch = MLRep.Signed.fromInt (Char.ord #"q") then [Event.Quit 0]
         else if !(#mode (!data)) = 0 then (
             if ch = MLRep.Signed.fromInt (Char.ord #"k") then (
                 write_back_note(data, !(#selected (!data)));
@@ -171,6 +177,9 @@ structure AppData :> APPDATA = struct
                         String.size(List.nth(lines, !(#content_cursor_line
                         (!data))))
                     end;
+                #content_cursor_x (!data) :=
+                Int.min(!(#content_current_line_width (!data)),
+                !(#content_cursor_x (!data)));
 
                 []
             )
@@ -187,6 +196,9 @@ structure AppData :> APPDATA = struct
                         String.size(List.nth(lines, !(#content_cursor_line
                         (!data))))
                     end;
+                #content_cursor_x (!data) :=
+                Int.min(!(#content_current_line_width (!data)),
+                !(#content_cursor_x (!data)));
 
                 []
             )

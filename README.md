@@ -21,6 +21,13 @@ To build this project you will need
 - curses (or a compatible library such as ncurses or pdcurses, this is usually pre-installed on most linux distros and macOS)
 - make
 
+## Important Note!
+The current version of the code does not intelligently load the curses dynamic library. This is because *correct* dynamic library loading
+that is cross platform is very hard. For this reason if you are not running Linux with the `ncursesw` library installed
+(i.e. `/usr/lib(32)/libncursesw.so` exists), you will likely not be able to build the project. The library that is used can easily be changed
+by editing line 4 of `src/curses.h.sml`, to look like `val soname = "<library soname>"`. For example, on Windows (with the pdcurses library
+installed), it might look like `val soname = "pdcurses.dll"`
+
 ## Build instructions
 To build the project:
 ```
